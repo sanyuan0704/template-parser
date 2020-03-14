@@ -1,21 +1,32 @@
 let str = 
   `<html>
     <body>
-      <div id="app">
-        <span>1</span>
-        <div my-data=12>
-        </div>
-      </div>
+      <img src="sfnlks,nfkslfjlsjdf"/>
     </body>
   </html>`;
 
+// 辅助函数
+const makeMap = (str) => {
+  let obj = {};
+  str.split(',').map(item => obj[item] = true);
+  return obj;
+}
+// 自闭合标签
+const isUnaryTag = makeMap(
+  'area,base,br,col,embed,frame,hr,img,input,isindex,keygen,' +
+  'link,meta,param,source,track,wbr'
+)
+// 打开标签的开始
 const tagStartOpen = /^\s*<([a-zA-Z_][\w]*)/;
+// 打开标签的结束
 const tagStartClose = /^\s*(\/?)>/;
+// 关闭标签
 const tagEnd = /^\s*<\/[a-zA-Z_][^>]*>/;
+// 匹配属性
 const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]*)))/;
 
-const TAG_TYPE = 0;
-const TEXT_TYPE = 1;
+const TAG_TYPE = 1;
+const TEXT_TYPE = 2;
 
 let generateElement = (tag) => {
   let { type, tagName = null, attrs } = tag;
@@ -57,6 +68,8 @@ let parseHTML = (html) => {
       advance(attr[0].length);
       curTag.attrs.push(attr);
     }
+    // 检测自闭合的 /
+    curTag.hasUnarySlash = !!end[1];
     advance(end[0].length);
     return curTag;
   };
@@ -73,8 +86,10 @@ let parseHTML = (html) => {
     // element.parent = currentParent;
     let children = (currentParent.children || (currentParent.children = []));
     children.push(element);
-    // 更新 currentParent
-    currentParent = element;
+    if(!(startTag.hasUnarySlash && isUnaryTag[startTag.tagName])) {
+      // 非自闭合标签，更新 currentParent
+      currentParent = element;
+    }
   };
 
   const parseEndTag = () => {
